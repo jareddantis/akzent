@@ -56,10 +56,17 @@ window.onload = () => {
     // Focus on textarea after page loads
     textArea.focus();
 
-    button.addEventListener('click', e => {
+    // Remove 'press Enter' message on mobile
+    if (navigator.userAgent.match(/(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i)) {
+        let msg = document.getElementById('desktop');
+        msg.parentNode.removeChild(msg);
+    }
+
+    // Process on button click/Enter press
+    let accentify = (e) => {
         let str = textArea.value;
 
-        if (str) {
+        if (str.length > 0) {
             let newstr = '';
             for (let i = 0; i < str.length; i++) {
                 let char = str[i];
@@ -72,17 +79,25 @@ window.onload = () => {
                     newstr += char;
             }
             output.innerText = newstr;
+
+            // Tell user what to do (but only once)
+            if (!educated) {
+                educated = true;
+                dismissDialog(dialog);
+                dialogMsg.innerText = "Tap/click text to copy";
+                showDialog(dialog);
+            }
         } else
             output.innerText = "";
-
-        // Tell user what to do (but only once)
-        if (!educated) {
-            educated = true;
-            dismissDialog(dialog);
-            dialogMsg.innerText = "Tap/click text to copy";
-            showDialog(dialog);
+    };
+    button.addEventListener('click', accentify, false);
+    textArea.addEventListener('keydown', e => {
+        // Process on Enter, but only add new line on Shift+Enter
+        if (e.keyCode == 13 && !e.shiftKey) {
+            e.preventDefault();
+            accentify(e);
         }
-    }, false);
+    });
 
     // Copy text to clipboard on click
     output.addEventListener('click', () => {
