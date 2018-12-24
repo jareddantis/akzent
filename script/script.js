@@ -1,42 +1,6 @@
 ﻿/* jshint esversion: 6 */
 // copyright @jareddantis, 2018
 
-window.onload = () => {
-    let button = document.getElementById('submit');
-    let output = document.querySelector('#output p');
-    button.addEventListener('click', e => {
-        let str = document.querySelector('#input textarea').value;
-
-        if (str) {
-            let newstr = '';
-            for (let i = 0; i < str.length; i++) {
-                let char = str[i];
-                let willChange = Math.random() >= 0.5; // 50% of the time, we leave the character alone
-
-                if (willChange && char != ' ' && dictionary.hasOwnProperty(char)) {
-                    let idx = Math.floor(Math.random() * dictionary[char].length);
-                    newstr += dictionary[char][idx];
-                } else
-                    newstr += char;
-            }
-            output.innerText = newstr;
-        } else
-            output.innerText = "";
-    }, false);
-
-    // Copy text to clipboard on click
-    output.addEventListener('click', () => {
-        document.execCommand("copy");
-    });
-    output.addEventListener('copy', (e) => {
-        e.preventDefault();
-        if (e.clipboardData) {
-            e.clipboardData.setData("text/plain", output.textContent);
-            console.log(e.clipboardData.getData("text"));
-        }
-    });
-};
-
 const dictionary = {
     "a": "àáâãäåæā",
     "b": "ß",
@@ -66,3 +30,85 @@ const dictionary = {
     "!": "¡"
 };
 
+// Dialog methods
+var intervalId = 1;
+function showDialog(dialog) {
+    dialog.classList.add('visible');
+    intervalId = window.setInterval(() => {
+        dialog.classList.remove('visible');
+    }, 2000);
+}
+function dismissDialog(dialog) {
+    if (dialog.classList.contains('visible')) {
+        window.clearInterval(intervalId);
+        dialog.classList.remove('visible');
+    }
+}
+
+var educated = false;
+window.onload = () => {
+    let button = document.getElementById('submit');
+    let output = document.querySelector('#output p');
+    let textArea = document.querySelector('#input textarea');
+    let dialog = document.getElementById('dialog');
+    let dialogMsg = document.querySelector('#dialog span');
+
+    // Focus on textarea after page loads
+    textArea.focus();
+
+    button.addEventListener('click', e => {
+        let str = textArea.value;
+
+        if (str) {
+            let newstr = '';
+            for (let i = 0; i < str.length; i++) {
+                let char = str[i];
+                let willChange = Math.random() >= 0.3; // 30% of the time, we leave the character alone
+
+                if (willChange && char != ' ' && dictionary.hasOwnProperty(char)) {
+                    let idx = Math.floor(Math.random() * dictionary[char].length);
+                    newstr += dictionary[char][idx];
+                } else
+                    newstr += char;
+            }
+            output.innerText = newstr;
+        } else
+            output.innerText = "";
+
+        // Tell user what to do (but only once)
+        if (!educated) {
+            educated = true;
+            dismissDialog(dialog);
+            dialogMsg.innerText = "Tap/click text to copy";
+            showDialog(dialog);
+        }
+    }, false);
+
+    // Copy text to clipboard on click
+    output.addEventListener('click', () => {
+        // Don't do anything if there's nothing to copy
+        if (output.innerText.trim().length == 0)
+            return;
+
+        // Make hidden textarea
+        let tempArea = document.createElement('textarea');
+        tempArea.classname = 'clipboard';
+        tempArea.value = output.innerText;
+        document.body.appendChild(tempArea);
+        tempArea.focus();
+        tempArea.select();
+
+        // Dialog
+        dismissDialog(dialog);
+        try {
+            document.execCommand('copy');
+            dialogMsg.innerText = 'Copied to clipboard';
+        } catch (e) {
+            dialogMsg.innerText = 'Can\'t copy to clipboard automatically. Update your browser, perhaps?';
+        }
+        // Dismiss interval after 2 sec
+        showDialog(dialog);
+
+        document.body.removeChild(tempArea);
+    });
+};
