@@ -100,7 +100,7 @@ window.onload = () => {
     });
 
     // Copy text to clipboard on click
-    output.addEventListener('click', () => {
+    output.addEventListener('click', (e) => {
         // Don't do anything if there's nothing to copy
         if (output.innerText.trim().length == 0)
             return;
@@ -108,19 +108,33 @@ window.onload = () => {
         // Make hidden textarea
         let tempArea = document.createElement('textarea');
         tempArea.classname = 'clipboard';
+        tempArea.contentEditable = true;
+        tempArea.readonly = false;
         tempArea.value = output.innerText;
         document.body.appendChild(tempArea);
         tempArea.focus();
         tempArea.select();
 
-        // Dialog
+        // Dismiss dialog if visible
         dismissDialog(dialog);
+
+        // Special treatment for iOS
+        if (!!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform)) {
+            let range = document.createRange();
+            let sel = window.getSelection();
+            range.selectNodeContents(tempArea);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            tempArea.setSelectionRange(0, 999999);
+        }
+
         try {
             document.execCommand('copy');
             dialogMsg.innerText = 'Copied to clipboard';
-        } catch (e) {
-            dialogMsg.innerText = 'Can\'t copy to clipboard automatically. Update your browser, perhaps?';
+        } catch (err) {
+            dialogMsg.innerText = 'Error copying to clipboard';
         }
+
         // Dismiss interval after 2 sec
         showDialog(dialog);
 
